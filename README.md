@@ -72,3 +72,8 @@ This baseline will be used as the reference point for subsequent model improveme
 **Phase 1 — Baseline implementation completed.**
 
 The next phase will focus on improving the model's ability to detect changed regions.
+## Baseline Experiment
+
+The initial baseline experiment was trained on a subset of the training data to validate the end-to-end pipeline before scaling up training.
+
+The first evaluation showed that the model predicted no positive change pixels, establishing a clear baseline for the next iteration.
