@@ -1,3 +1,4 @@
+```python
 import torch
 import torch.nn as nn
 
@@ -123,7 +124,7 @@ for epoch in range(epochs):
         # Backpropagation
         loss.backward()
 
-        # Update model weights
+        # Update weights
         optimizer.step()
 
         total_loss += loss.item()
@@ -142,7 +143,7 @@ for epoch in range(epochs):
 
 
 # --------------------------------------------------
-# Save model
+# Save Phase 3B model
 # --------------------------------------------------
 
 torch.save(
@@ -155,3 +156,4 @@ print(
     "Model saved to "
     "models/phase3_longer_training_model.pth"
 )
+```
