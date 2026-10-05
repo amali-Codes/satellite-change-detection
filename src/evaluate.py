@@ -40,7 +40,7 @@ model = ChangeDetectionModel().to(device)
 
 model.load_state_dict(
     torch.load(
-        "models/baseline_model.pth",
+        "models/phase2_class_imbalance_model.pth",
         map_location=device
     )
 )
@@ -206,11 +206,11 @@ plt.axis("off")
 plt.tight_layout()
 
 plt.savefig(
-    "outputs/baseline_prediction.png",
+    "outputs/phase2_class_imbalance_prediction.png",
     dpi=150
 )
 
 plt.show()
 
 print("\nPrediction image saved to:")
-print("outputs/baseline_prediction.png")
+print("outputs/phase2_class_imbalance_prediction.png")
