@@ -22,7 +22,7 @@ print("Using device:", device)
 
 full_dataset = LEVIRCDDataset("train")
 
-# Temporary small dataset for testing the pipeline
+# Temporary small dataset
 dataset = Subset(
     full_dataset,
     range(100)
@@ -50,10 +50,37 @@ model = ChangeDetectionModel().to(device)
 
 
 # --------------------------------------------------
-# Loss function
+# Loss functions
 # --------------------------------------------------
 
-criterion = nn.BCEWithLogitsLoss()
+bce_loss = nn.BCEWithLogitsLoss()
+
+
+def dice_loss(output, target):
+
+    probability = torch.sigmoid(output)
+
+    probability = probability.view(-1)
+    target = target.view(-1)
+
+    intersection = (probability * target).sum()
+
+    dice = (
+        2 * intersection + 1e-8
+    ) / (
+        probability.sum() + target.sum() + 1e-8
+    )
+
+    return 1 - dice
+
+
+def combined_loss(output, target):
+
+    bce = bce_loss(output, target)
+
+    dice = dice_loss(output, target)
+
+    return bce + dice
 
 
 # --------------------------------------------------
@@ -70,7 +97,7 @@ optimizer = torch.optim.Adam(
 # Training
 # --------------------------------------------------
 
-epochs = 1
+epochs = 5
 
 for epoch in range(epochs):
 
@@ -90,8 +117,8 @@ for epoch in range(epochs):
         # Forward pass
         output = model(image_a, image_b)
 
-        # Calculate loss
-        loss = criterion(output, label)
+        # Calculate combined BCE + Dice loss
+        loss = combined_loss(output, label)
 
         # Backpropagation
         loss.backward()
@@ -120,8 +147,11 @@ for epoch in range(epochs):
 
 torch.save(
     model.state_dict(),
-    "models/baseline_model.pth"
+    "models/phase3_longer_training_model.pth"
 )
 
-print("\nTraining complete!")
-print("Model saved to models/baseline_model.pth")
+print("\nPhase 3B training complete!")
+print(
+    "Model saved to "
+    "models/phase3_longer_training_model.pth"
+)
