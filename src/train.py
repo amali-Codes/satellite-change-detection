@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from dataset import LEVIRCDDataset
 from model import ChangeDetectionModel
@@ -22,14 +22,10 @@ print("Using device:", device)
 
 full_dataset = LEVIRCDDataset("train")
 
-# Temporary small dataset
-dataset = Subset(
-    full_dataset,
-    range(100)
-)
+# Full training dataset
+dataset = full_dataset
 
 print("Training samples:", len(dataset))
-
 
 # --------------------------------------------------
 # DataLoader
@@ -147,11 +143,11 @@ for epoch in range(epochs):
 
 torch.save(
     model.state_dict(),
-    "models/phase3_longer_training_model.pth"
+    "models/phase4a_full_dataset_model.pth"
 )
 
-print("\nPhase 3B training complete!")
+print("\nPhase 4A training complete!")
 print(
     "Model saved to "
-    "models/phase3_longer_training_model.pth"
+    "models/phase4a_full_dataset_model.pth"
 )
