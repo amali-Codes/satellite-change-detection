@@ -1,0 +1,2 @@
+checkpoint,test_images,threshold,IoU,Dice,Precision,Recall
+phase4b_longer_training_model.pth,348,0.1,0.373262,0.543614,0.523644,0.565168
