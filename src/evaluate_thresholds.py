@@ -1,27 +1,18 @@
+
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from dataset import LEVIRCDDataset
 from model import ChangeDetectionModel
 
 
-# --------------------------------------------------
 # Device
-# --------------------------------------------------
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 print("Using device:", device)
 
 
-# --------------------------------------------------
-# Dataset
-# --------------------------------------------------
-
-full_dataset = LEVIRCDDataset("train")
-
-# Same 100 training samples used during Phase 3B
-dataset = Subset(full_dataset, range(100))
+# Test dataset: all 348 test images
+dataset = LEVIRCDDataset("test")
 
 loader = DataLoader(
     dataset,
@@ -29,16 +20,15 @@ loader = DataLoader(
     shuffle=False
 )
 
+print("Test samples:", len(dataset))
 
-# --------------------------------------------------
-# Model
-# --------------------------------------------------
 
+# Load the Phase 4B model
 model = ChangeDetectionModel()
 
 model.load_state_dict(
     torch.load(
-        "models/phase3_longer_training_model.pth",
+        "models/phase4b_longer_training_model.pth",
         map_location=device
     )
 )
@@ -46,103 +36,69 @@ model.load_state_dict(
 model.to(device)
 model.eval()
 
-print("Phase 3B model loaded successfully!")
+print("Phase 4B model loaded successfully!")
 
 
-# --------------------------------------------------
-# Thresholds
-# --------------------------------------------------
-
+# Probability thresholds to compare
 thresholds = [0.50, 0.40, 0.30, 0.20, 0.10]
 
-
-# --------------------------------------------------
-# Store results
-# --------------------------------------------------
-
+# Accumulate pixel counts for each threshold
 results = {
     threshold: {
-        "intersection": 0,
-        "predicted_positive": 0,
-        "actual_positive": 0
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
     }
     for threshold in thresholds
 }
 
 
-# --------------------------------------------------
-# Evaluation
-# --------------------------------------------------
-
+# Evaluate the same model and test images at each threshold
 with torch.no_grad():
-
     for image_a, image_b, label in loader:
 
         image_a = image_a.to(device)
         image_b = image_b.to(device)
-        label = label.to(device)
+        label = (label.to(device) >= 0.5)
 
-        output = model(image_a, image_b)
-
-        probability = torch.sigmoid(output)
+        logits = model(image_a, image_b)
+        probability = torch.sigmoid(logits)
 
         for threshold in thresholds:
+            prediction = probability >= threshold
 
-            prediction = (probability >= threshold).float()
-
-            intersection = (
-                prediction * label
-            ).sum().item()
-
-            predicted_positive = prediction.sum().item()
-            actual_positive = label.sum().item()
-
-            results[threshold]["intersection"] += intersection
-            results[threshold]["predicted_positive"] += predicted_positive
-            results[threshold]["actual_positive"] += actual_positive
+            results[threshold]["tp"] += (
+                (prediction & label).sum().item()
+            )
+            results[threshold]["fp"] += (
+                (prediction & ~label).sum().item()
+            )
+            results[threshold]["fn"] += (
+                (~prediction & label).sum().item()
+            )
 
 
-# --------------------------------------------------
-# Calculate metrics
-# --------------------------------------------------
-
-print("\n==============================")
-print("THRESHOLD ANALYSIS")
-print("==============================")
+# Calculate metrics across all test pixels
+print("\n====================================")
+print("PHASE 4C: THRESHOLD ANALYSIS")
+print("====================================")
 
 for threshold in thresholds:
 
-    intersection = results[threshold]["intersection"]
-    predicted_positive = results[threshold]["predicted_positive"]
-    actual_positive = results[threshold]["actual_positive"]
+    tp = results[threshold]["tp"]
+    fp = results[threshold]["fp"]
+    fn = results[threshold]["fn"]
 
-    union = (
-        predicted_positive
-        + actual_positive
-        - intersection
-    )
+    iou = tp / (tp + fp + fn + 1e-8)
+    dice = (2 * tp) / (2 * tp + fp + fn + 1e-8)
+    precision = tp / (tp + fp + 1e-8)
+    recall = tp / (tp + fn + 1e-8)
 
-    iou = intersection / (union + 1e-8)
-
-    dice = (
-        2 * intersection
-        / (predicted_positive + actual_positive + 1e-8)
-    )
-
-    precision = (
-        intersection
-        / (predicted_positive + 1e-8)
-    )
-
-    recall = (
-        intersection
-        / (actual_positive + 1e-8)
-    )
-
-    print(f"\nThreshold: {threshold}")
-    print(f"Predicted positive pixels: {predicted_positive}")
-    print(f"Actual positive pixels:    {actual_positive}")
-    print(f"IoU:       {iou:.4f}")
-    print(f"Dice/F1:   {dice:.4f}")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall:    {recall:.4f}")
+    print(f"\nThreshold:  {threshold:.2f}")
+    print(f"TP:         {tp}")
+    print(f"FP:         {fp}")
+    print(f"FN:         {fn}")
+    print(f"IoU:        {iou:.4f}")
+    print(f"Dice/F1:    {dice:.4f}")
+    print(f"Precision:  {precision:.4f}")
+    print(f"Recall:     {recall:.4f}")
