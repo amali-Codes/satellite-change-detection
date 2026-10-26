@@ -1,79 +1,133 @@
 # Satellite Image Change Detection
 
-A deep learning project for detecting changes between two satellite images captured at different points in time.
+A deep learning project that identifies pixel-level changes between satellite images captured at different points in time using PyTorch.
 
 ## Problem
 
-Given two satellite images of the same geographical location from different time periods, the goal is to identify pixels where meaningful changes have occurred.
+Given two satellite images of the same geographical location from different time periods, the goal is to identify regions where changes have occurred.
 
-The project focuses on building a pixel-level change detection pipeline using deep learning.
+The project builds a pixel-level change detection pipeline using a U-Net-style convolutional neural network.
 
 ## Dataset
 
-The project uses the LEVIR-CD+ dataset, which contains pairs of high-resolution satellite images and corresponding ground-truth change masks.
+This project uses the **LEVIR-CD+** dataset.
 
 Each sample contains:
 
-* Image A — earlier satellite image
-* Image B — later satellite image
-* Label — pixel-level change mask
+- **Image A:** Earlier satellite image
+- **Image B:** Later satellite image
+- **Label:** Ground-truth pixel-level change mask
 
-The images are resized to `256 × 256` during preprocessing.
+Images are resized to `256 × 256` during preprocessing.
+
+Dataset split:
+
+- Training samples: 637
+- Test samples: 348
 
 ## Current Pipeline
 
 ```text
-Satellite Image A ──┐
-                    ├──> Baseline Model ──> Change Mask
-Satellite Image B ──┘
+Satellite Image A ─┐
+                   ├──> Change Detection Model
+Satellite Image B ─┘             │
+                                 ▼
+                       Predicted Change Mask
+                                 │
+                                 ▼
+                      Evaluation and Analysis
 ```
 
-The current implementation includes:
+## Implemented Features
 
-* Dataset loading and preprocessing
-* Baseline CNN model
-* Model training
-* Model evaluation
-* IoU, Dice, precision and recall metrics
-* Prediction visualization
+- Dataset loading and preprocessing
+- CNN-based change detection model
+- Training and evaluation pipelines
+- BCE and Dice-based loss experiments
+- Prediction mask visualization
+- IoU, Dice/F1, precision and recall evaluation
+- Longer-training experiment
+- Probability-threshold analysis
 
-## Baseline Results
+## Experiment Results
 
-The initial baseline model produces predictions but currently fails to detect the positive/change class effectively.
+### Phase 4B — Longer Training
 
-This baseline will be used as the reference point for subsequent model improvements.
+The model was trained on all 637 training samples for 10 epochs and evaluated on the 348 test samples.
+
+Recorded results at threshold `0.50`:
+
+| Metric | Result |
+|---|---:|
+| IoU | 0.3007 |
+| Dice/F1 | 0.4164 |
+| Precision | 0.4960 |
+| Recall | 0.4375 |
+
+Prediction visualization: `outputs/phase4b_prediction.png`
+
+### Phase 4C — Threshold Analysis
+
+The Phase 4B model was evaluated on the test set using five probability thresholds.
+
+| Threshold | IoU | Dice/F1 | Precision | Recall |
+|---:|---:|---:|---:|---:|
+| 0.50 | 0.3510 | 0.5196 | 0.5930 | 0.4623 |
+| 0.40 | 0.3558 | 0.5249 | 0.5808 | 0.4787 |
+| 0.30 | 0.3608 | 0.5303 | 0.5679 | 0.4973 |
+| 0.20 | 0.3660 | 0.5359 | 0.5510 | 0.5215 |
+| 0.10 | 0.3733 | 0.5436 | 0.5236 | 0.5652 |
+
+Among the tested thresholds, `0.10` produced the highest IoU, Dice/F1 and recall. Threshold `0.50` produced the highest precision.
+
+**Evaluation note:** Thresholds were explored on the test set, so these results are exploratory. A separate validation split should be used to select the final threshold before an unbiased final test evaluation. Phase 4B and Phase 4C metrics also use different aggregation methods, so their scores should not be directly compared as evidence of improvement.
 
 ## Project Roadmap
 
-* [x] Dataset pipeline
-* [x] Baseline model
-* [x] Training pipeline
-* [x] Evaluation pipeline
-* [x] Baseline prediction visualization
-* [ ] Address class imbalance
-* [ ] Improve model architecture
-* [ ] Compare model variants
-* [ ] Perform error analysis
-* [ ] Build inference API
-* [ ] Dockerize the application
-* [ ] Create an interactive demo
+- [x] Dataset pipeline
+- [x] Baseline model
+- [x] Training pipeline
+- [x] Evaluation pipeline
+- [x] Prediction visualization
+- [x] Full-dataset training experiment
+- [x] Longer-training experiment
+- [x] Probability-threshold analysis
+- [ ] Validation-based threshold selection
+- [ ] Model architecture experiments
+- [ ] Error analysis
+- [ ] Inference API
+- [ ] Docker deployment
+- [ ] Interactive demo
 
 ## Tech Stack
 
-* Python
-* PyTorch
-* NumPy
-* OpenCV
-* Pillow
-* scikit-learn
+- Python
+- PyTorch
+- NumPy
+- OpenCV
+- Pillow
+- scikit-learn
+
+## Project Structure
+
+```text
+satellite-change-detection/
+├── src/
+│   ├── dataset.py
+│   ├── model.py
+│   ├── train.py
+│   ├── evaluate.py
+│   ├── evaluate_thresholds.py
+│   └── utils.py
+├── outputs/
+│   └── phase4b_prediction.png
+├── models/
+├── README.md
+└── requirements.txt
+```
 
 ## Project Status
 
-**Phase 1 — Baseline implementation completed.**
+**Completed:** Baseline pipeline, full-dataset training, longer-training experiment and threshold analysis.
 
-The next phase will focus on improving the model's ability to detect changed regions.
-## Baseline Experiment
-
-The initial baseline experiment was trained on a subset of the training data to validate the end-to-end pipeline before scaling up training.
-
-The first evaluation showed that the model predicted no positive change pixels, establishing a clear baseline for the next iteration.
+**Next:** Establish a validation split, select a threshold using validation data, and evaluate the selected configuration on the test set.
