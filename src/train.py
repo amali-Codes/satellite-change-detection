@@ -93,7 +93,7 @@ optimizer = torch.optim.Adam(
 # Training
 # --------------------------------------------------
 
-epochs = 5
+epochs = 10
 
 for epoch in range(epochs):
 
@@ -143,11 +143,11 @@ for epoch in range(epochs):
 
 torch.save(
     model.state_dict(),
-    "models/phase4a_full_dataset_model.pth"
+    "models/phase4b_longer_training_model.pth"
 )
 
-print("\nPhase 4A training complete!")
+print("\nPhase 4B training complete!")
 print(
     "Model saved to "
-    "models/phase4a_full_dataset_model.pth"
+    "models/phase4b_longer_training_model.pth"
 )
